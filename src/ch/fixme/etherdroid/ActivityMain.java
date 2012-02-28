@@ -11,6 +11,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -45,8 +47,7 @@ public class ActivityMain extends Activity {
         list.setAdapter(mAdapter);
         list.setEmptyView(findViewById(R.id.empty));
         list.setOnItemClickListener(new OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View view,
-                    int position, long id) {
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 // List saved pads from this host
                 Intent i = new Intent(Intent.ACTION_VIEW);
                 i.putExtra("hostid", id);
@@ -107,50 +108,72 @@ public class ActivityMain extends Activity {
             AlertDialog.Builder b1 = new AlertDialog.Builder(this);
             b1.setTitle("Add host");
             // Custom view
-            View layout = getLayoutInflater().inflate(R.layout.dialog_add_host,
-                    null);
+            View layout = getLayoutInflater().inflate(R.layout.dialog_add_host, null);
             b1.setView(layout);
             // Buttons actions
-            final EditText txt_host = (EditText) layout.findViewById(R.id.add_host);
-            final EditText txt_port = (EditText) layout.findViewById(R.id.add_port);
-            final EditText txt_key = (EditText) layout.findViewById(R.id.add_apikey);
-            txt_host.setText("");
-            txt_port.setText("");
-            txt_key.setText("");
+            final EditText host = (EditText) layout.findViewById(R.id.add_host);
+            final EditText port = (EditText) layout.findViewById(R.id.add_port);
+            final EditText key = (EditText) layout.findViewById(R.id.add_apikey);
             b1.setPositiveButton("Add", null);
-            b1.setNegativeButton("Cancel",
-                    new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            dismissDialog(DIALOG_ADD); // FIXME: Is it working ?
-                        }
-                    });
-            // Create
+            b1.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+            host.addTextChangedListener(new TextWatcher() {
+                public void afterTextChanged(Editable s) {
+                }
+
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    validateAdd(host, null, null);
+                }
+            });
+            port.addTextChangedListener(new TextWatcher() {
+                public void afterTextChanged(Editable s) {
+                }
+
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    validateAdd(null, port, null);
+                }
+            });
+            key.addTextChangedListener(new TextWatcher() {
+                public void afterTextChanged(Editable s) {
+                }
+
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    validateAdd(null, null, key);
+                }
+            });
+            // Creation and Listeners
             dialog = b1.create();
+            dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                public void onCancel(DialogInterface dialog) {
+                    host.setText("");
+                    port.setText("");
+                    key.setText("");
+                    host.setError(null);
+                    port.setError(null);
+                    key.setError(null);
+                }
+            });
             dialog.setOnShowListener(new DialogInterface.OnShowListener() {
                 public void onShow(DialogInterface d) {
-                    Button button = dialog
-                            .getButton(DialogInterface.BUTTON_POSITIVE);
+                    Button button = dialog.getButton(DialogInterface.BUTTON_POSITIVE);
                     button.setOnClickListener(new View.OnClickListener() {
                         public void onClick(View v) {
-                            boolean ok = true;
-                            if (txt_host.getText().toString().length() == 0) {
-                                txt_host.setError("You must Provide an host address");
-                                ok = false;
-                            }
-                            if (txt_port.getText().toString().length() == 0) {
-                                txt_port.setError("You must Provide a port");
-                                ok = false;
-                            }
-                            if (txt_key.getText().toString().length() == 0) {
-                                txt_key.setError("You must Provide an API key");
-                                ok = false;
-                            }
-                            if (ok) {
-                                new AddHost().execute(txt_host.getText()
-                                        .toString(), txt_port.getText()
-                                        .toString(), txt_key.getText()
-                                        .toString());
-                                dialog.dismiss();
+                            if (validateAdd(host, port, key)) {
+                                new AddHost().execute(host.getText().toString(), port.getText()
+                                        .toString(), key.getText().toString());
+                                dialog.cancel();
                             }
                         }
                     });
@@ -161,6 +184,23 @@ public class ActivityMain extends Activity {
             dialog = null;
         }
         return dialog;
+    }
+
+    private boolean validateAdd(EditText host, EditText port, EditText key) {
+        boolean ok = true;
+        if (host != null && host.getText().toString().length() == 0) {
+            host.setError("You must Provide an host address");
+            ok = false;
+        }
+        if (port != null && port.getText().toString().length() == 0) {
+            port.setError("You must Provide a port");
+            ok = false;
+        }
+        if (key != null && key.getText().toString().length() == 0) {
+            key.setError("You must Provide an API key");
+            ok = false;
+        }
+        return ok;
     }
 
     private class ListTask extends AsyncTask<Void, Void, Cursor> {
@@ -189,8 +229,7 @@ public class ActivityMain extends Activity {
         protected void onPostExecute(Void unused) {
             mCursor.requery();
             mAdapter.notifyDataSetChanged();
-            Toast.makeText(mContext, "Host successfully added!",
-                    Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, "Host successfully added!", Toast.LENGTH_SHORT).show();
         }
     }
 }
