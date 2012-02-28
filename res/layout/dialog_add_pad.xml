@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:layout_marginRight="2dip"
         android:hint="Name"
-        android:inputType="textUri"
+        android:inputType="text|textNoSuggestions"
         android:maxLines="1"
         android:singleLine="true" />
 
@@ -19,7 +19,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:hint="PadID"
-        android:inputType="text"
+        android:inputType="text|textNoSuggestions"
         android:maxLines="1"
         android:singleLine="true" />
 
